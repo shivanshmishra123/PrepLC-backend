@@ -1,0 +1,26 @@
+# Build outputs
+target/
+app.jar
+
+# IDE files
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# Git
+.git
+.gitignore
+
+# Environment (secrets injected at runtime, not baked into image)
+.env
+.env.local
+
+# Docker files (no recursion)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# OS files
+*.md
