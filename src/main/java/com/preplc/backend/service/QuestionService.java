@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,10 +23,18 @@ public class QuestionService {
     @Autowired
     private CompanyQuestionRepository companyQuestionRepository;
 
+    @Transactional(readOnly = true)
     public Page<Question> getAllQuestions(Pageable pageable) {
-        return questionRepository.findAll(pageable);
+        // Step 1: fetch paginated IDs only (avoids Hibernate pagination + JOIN FETCH warning)
+        Page<Integer> idPage = questionRepository.findAllIds(pageable);
+
+        // Step 2: fetch full Question + companyQuestions + company in one JOIN FETCH query
+        List<Question> questions = questionRepository.findByIdsWithCompanies(idPage.getContent());
+
+        return new PageImpl<>(questions, pageable, idPage.getTotalElements());
     }
     
+    @Transactional(readOnly = true)
     public Page<Question> getQuestionsByTimeFrame(String timeFrame, Pageable pageable) {
         List<CompanyQuestion> companyQuestions = companyQuestionRepository.findByTimeFrame(timeFrame);
         List<Question> questions = companyQuestions.stream()
@@ -41,4 +50,3 @@ public class QuestionService {
         return new PageImpl<>(pageContent, pageable, questions.size());
     }
 }
-
