@@ -36,17 +36,16 @@ public class QuestionService {
     
     @Transactional(readOnly = true)
     public Page<Question> getQuestionsByTimeFrame(String timeFrame, Pageable pageable) {
-        List<CompanyQuestion> companyQuestions = companyQuestionRepository.findByTimeFrame(timeFrame);
-        List<Question> questions = companyQuestions.stream()
-                .map(CompanyQuestion::getQuestion)
-                .distinct()
-                .collect(Collectors.toList());
-        
-        // Manual pagination for the filtered list
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), questions.size());
-        
-        List<Question> pageContent = questions.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, questions.size());
+        // Step 1: fetch paginated IDs only for the given timeframe
+        Page<Integer> idPage = questionRepository.findIdsByTimeFrame(timeFrame, pageable);
+
+        if (idPage.isEmpty()) {
+            return new PageImpl<>(java.util.Collections.emptyList(), pageable, 0);
+        }
+
+        // Step 2: fetch full Question + companyQuestions + company in one JOIN FETCH query
+        List<Question> questions = questionRepository.findByIdsWithCompanies(idPage.getContent());
+
+        return new PageImpl<>(questions, pageable, idPage.getTotalElements());
     }
 }

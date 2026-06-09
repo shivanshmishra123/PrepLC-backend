@@ -18,4 +18,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     @Query("SELECT DISTINCT q FROM Question q LEFT JOIN FETCH q.companyQuestions cq LEFT JOIN FETCH cq.company WHERE q.id IN :ids")
     List<Question> findByIdsWithCompanies(List<Integer> ids);
+
+    @Query("SELECT DISTINCT q.id FROM Question q JOIN q.companyQuestions cq WHERE cq.timeFrame = :timeFrame")
+    Page<Integer> findIdsByTimeFrame(@org.springframework.data.repository.query.Param("timeFrame") String timeFrame, Pageable pageable);
 }

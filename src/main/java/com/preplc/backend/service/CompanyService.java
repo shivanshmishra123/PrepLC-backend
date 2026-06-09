@@ -25,13 +25,14 @@ public class CompanyService {
         return companyRepository.findAll();
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<CompanyQuestion> getQuestionsByCompany(Long companyId, String timeFrame, Pageable pageable) {
         List<CompanyQuestion> allQuestions;
         
         if (timeFrame != null && !timeFrame.isEmpty() && !timeFrame.equalsIgnoreCase("all")) {
-            allQuestions = companyQuestionRepository.findByCompanyIdAndTimeFrame(companyId, timeFrame);
+            allQuestions = companyQuestionRepository.findByCompanyIdAndTimeFrameWithDetails(companyId, timeFrame);
         } else {
-            allQuestions = companyQuestionRepository.findByCompanyId(companyId);
+            allQuestions = companyQuestionRepository.findByCompanyIdWithDetails(companyId);
         }
         
         // Manual pagination for the filtered list
