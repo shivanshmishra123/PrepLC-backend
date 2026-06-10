@@ -1,6 +1,8 @@
 package com.preplc.backend.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.preplc.backend.model.Question;
+import com.preplc.backend.service.CacheService;
 import com.preplc.backend.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,12 +24,23 @@ public class QuestionController {
     @Autowired
     private QuestionService questionService;
 
+    @Autowired
+    private CacheService cacheService;
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllQuestions(
             @RequestParam(required = false) String timeFrame,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
+        String tf = (timeFrame == null || timeFrame.isEmpty()) ? "all" : timeFrame;
+        String cacheKey = String.format("preplc:questions:tf=%s:p=%d:s=%d", tf, page, size);
+
+        Map<String, Object> cached = cacheService.get(cacheKey, new TypeReference<Map<String, Object>>() {});
+        if (cached != null) {
+            return ResponseEntity.ok(cached);
+        }
+
         Pageable pageable = PageRequest.of(page, size);
         Page<Question> questionPage;
         
@@ -43,6 +56,8 @@ public class QuestionController {
         response.put("totalPages", questionPage.getTotalPages());
         response.put("totalElements", questionPage.getTotalElements());
         response.put("hasMore", questionPage.hasNext());
+
+        cacheService.set(cacheKey, response, 60); // Cache for 1 hour
         
         return ResponseEntity.ok(response);
     }
