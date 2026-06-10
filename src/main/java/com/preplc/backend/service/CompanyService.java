@@ -27,20 +27,20 @@ public class CompanyService {
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<CompanyQuestion> getQuestionsByCompany(Long companyId, String timeFrame, Pageable pageable) {
-        List<CompanyQuestion> allQuestions;
+        Page<Long> idPage;
         
         if (timeFrame != null && !timeFrame.isEmpty() && !timeFrame.equalsIgnoreCase("all")) {
-            allQuestions = companyQuestionRepository.findByCompanyIdAndTimeFrameWithDetails(companyId, timeFrame);
+            idPage = companyQuestionRepository.findIdsByCompanyIdAndTimeFrame(companyId, timeFrame, pageable);
         } else {
-            allQuestions = companyQuestionRepository.findByCompanyIdWithDetails(companyId);
+            idPage = companyQuestionRepository.findIdsByCompanyId(companyId, pageable);
         }
         
-        // Manual pagination for the filtered list
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), allQuestions.size());
+        if (idPage.isEmpty()) {
+            return new PageImpl<>(java.util.Collections.emptyList(), pageable, 0);
+        }
         
-        List<CompanyQuestion> pageContent = allQuestions.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, allQuestions.size());
+        List<CompanyQuestion> content = companyQuestionRepository.findByIdsWithDetails(idPage.getContent());
+        return new PageImpl<>(content, pageable, idPage.getTotalElements());
     }
 }
 
