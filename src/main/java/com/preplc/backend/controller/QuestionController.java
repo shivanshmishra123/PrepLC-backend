@@ -57,7 +57,7 @@ public class QuestionController {
         response.put("totalElements", questionPage.getTotalElements());
         response.put("hasMore", questionPage.hasNext());
 
-        cacheService.set(cacheKey, response, 60); // Cache for 1 hour
+        cacheService.set(cacheKey, response, 525600L); // Cache for 1 year
         
         return ResponseEntity.ok(response);
     }
